@@ -15,7 +15,7 @@ __all__ = ["api_conformance_test", "operation_conformance_test"]
 log = logging.getLogger(__name__)
 
 
-def api_conformance_test(schema_path, num_tests_per_op=20, cont_on_err=True):
+def api_conformance_test(schema_path, num_tests_per_op=20, cont_on_err=True, send_opt=None):
     """Basic test of the conformance of the API defined by the given schema.
 
     :param schema_path: The path to / URL of the schema to validate.
@@ -24,8 +24,10 @@ def api_conformance_test(schema_path, num_tests_per_op=20, cont_on_err=True):
     :type num_tests_per_op: int
     :param cont_on_err: Validate all operations, or drop out on first error.
     :type cont_on_err: bool
+    :param send_opt: Additional options for requests, such as {'verify': False}
+    :type send_opt: dict
     """
-    client = Client(schema_path)
+    client = Client(schema_path, send_opt=send_opt)
     log.debug("Expanded endpoints as: %r", client.api)
 
     hit_errors = []
@@ -77,7 +79,8 @@ def operation_conformance_test(client, operation, num_tests=20):
         assert result.status in operation.response_codes, \
             "Response code {} not in {}".format(result.status,
                                                 operation.response_codes)
-        assert any(entry.strip().startswith('application/json') \
+        # Sometimes connexion returns application/problem+json with 404 for parameter errors (e.g. when a path param is %2f)
+        assert any(entry.strip().startswith(('application/json', 'application/problem+json'))
                    for entry in result.headers['Content-Type']), \
             "'application/json' not in 'Content-Type' header: {}" \
             .format(result.headers['Content-Type'])

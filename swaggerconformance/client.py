@@ -30,8 +30,9 @@ class Client:
     :type codec: codec.CodecFactory or None
     """
 
-    def __init__(self, schema_path, codec=None):
+    def __init__(self, schema_path, codec=None, send_opt=None):
         self._schema_path = schema_path
+        self._send_opt = send_opt
 
         if codec is None:
             codec = CodecFactory()
@@ -66,7 +67,7 @@ class Client:
 
         :rtype: pyswagger.io.Response
         """
-        client = PyswaggerClient(Security(self._app))
+        client = PyswaggerClient(Security(self._app), send_opt=self._send_opt)
         result = client.request(operation._pyswagger_operation(**parameters))  # pylint: disable=protected-access
 
         return Response(result)
